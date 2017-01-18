@@ -47,59 +47,63 @@ public class PatchGenerator {
     }
 
     public static void update(UpdatableGeometry geometry, Procedural proc, Vector3f pos, float scale) {
-        int resolution = (int) Math.sqrt(geometry.getMaxCount());
 
-        ShortBuffer indices = geometry.getIndices();
-        FloatBuffer vertices = null;
-        FloatBuffer normals = null;
-        for(Geometry.Attribute att : geometry.getAttributes()) {
-            if(att.name.equals(POS_ATT_NAME)) {
-                vertices = (FloatBuffer) att.buffer;
+        synchronized (geometry) {
+            int resolution = (int) Math.sqrt(geometry.getMaxCount());
+
+            ShortBuffer indices = geometry.getIndices();
+            FloatBuffer vertices = null;
+            FloatBuffer normals = null;
+            for (Geometry.Attribute att : geometry.getAttributes()) {
+                if (att.name.equals(POS_ATT_NAME)) {
+                    vertices = (FloatBuffer) att.buffer;
+                } else if (att.name.equals(NORMAL_ATT_NAME)) {
+                    normals = (FloatBuffer) att.buffer;
+                }
             }
-            else if(att.name.equals(NORMAL_ATT_NAME)) {
-                normals = (FloatBuffer) att.buffer;
+
+            vertices.clear();
+            normals.clear();
+            Vector3f vertPos = new Vector3f();
+            Vector3f realPos = new Vector3f();
+            Vector3f gradient = new Vector3f();
+            for (int j = 0; j < resolution; j++) {
+                for (int i = 0; i < resolution; i++) {
+                    vertPos.set(-1.f + 2.f * i / (resolution - 1), -1.f + 2.f * j / (resolution - 1), 0.f);
+                    realPos.set(vertPos);
+                    realPos.multThis(scale);
+                    realPos.addThis(pos);
+
+                    double h = proc.getValueNormal(realPos.x, realPos.y, realPos.z,
+                            scale / resolution, gradient);
+
+                    vertices.put(vertPos.x);
+                    vertices.put(vertPos.y);
+                    vertices.put((float) h);
+
+                    normals.put(gradient.x);
+                    normals.put(gradient.y);
+                    normals.put(gradient.z);
+                }
             }
+            vertices.flip();
+            normals.flip();
+
+            indices.clear();
+            for (short j = 0; j < resolution - 1; j++) {
+                for (short i = 0; i < resolution; i++) {
+                    indices.put((short) (j * resolution + i));
+                    indices.put((short) ((j + 1) * resolution + i));
+                }
+                // Degenerated triangle
+                indices.put((short) ((j + 2) * resolution - 1));
+                indices.put((short) ((j + 1) * resolution));
+            }
+            indices.flip();
+
+            geometry.setCount(indices.capacity());
+            geometry.needsUpdate = true;
+
         }
-
-        vertices.clear();
-        normals.clear();
-        Vector3f vertPos = new Vector3f();
-        Vector3f realPos = new Vector3f();
-        Vector3f gradient = new Vector3f();
-        for(int j = 0; j < resolution; j++) {
-            for(int i = 0; i < resolution; i++) {
-                vertPos.set(-1.f + 2.f*i/(resolution - 1), -1.f + 2.f*j/(resolution - 1), 0.f);
-                realPos.set(vertPos);
-                realPos.multThis(scale);
-                realPos.addThis(pos);
-
-                double h = proc.getValueNormal(realPos.x, realPos.y, realPos.z,
-                        scale / resolution, gradient);
-
-                vertices.put(vertPos.x);
-                vertices.put(vertPos.y);
-                vertices.put((float) h);
-
-                normals.put(gradient.x);
-                normals.put(gradient.y);
-                normals.put(gradient.z);
-            }
-        }
-        vertices.flip();
-        normals.flip();
-
-        indices.clear();
-        for(short j = 0; j < resolution - 1; j++) {
-            for(short i = 0; i < resolution; i++) {
-                indices.put((short) (j*resolution + i));
-                indices.put((short) ((j+1)*resolution + i));
-            }
-            // Degenerated triangle
-            indices.put((short) ((j+2)*resolution - 1 ));
-            indices.put((short) ((j+1)*resolution));
-        }
-        indices.flip();
-
-        geometry.setCount(indices.capacity());
     }
 }

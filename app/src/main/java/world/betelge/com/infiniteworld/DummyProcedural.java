@@ -15,7 +15,7 @@ public class DummyProcedural implements Procedural {
 
     @Override
     public double getValueNormal(double x, double y, double z, double resolution, Vector3f gradient) {
-        gradient.set(0, 0, 0);
+        gradient.set(0, 0, -1);
         return 0;
     }
 }
