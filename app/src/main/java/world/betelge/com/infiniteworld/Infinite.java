@@ -8,14 +8,17 @@ import java.util.List;
 
 import tk.betelge.alw3d.Alw3dModel;
 import tk.betelge.alw3d.Alw3dView;
+import tk.betelge.alw3d.math.Noise;
 import tk.betelge.alw3d.math.Vector3f;
 import tk.betelge.alw3d.procedurals.Procedural;
 import tk.betelge.alw3d.renderer.CameraNode;
 import tk.betelge.alw3d.renderer.Material;
 import tk.betelge.alw3d.renderer.Node;
+import tk.betelge.alw3d.renderer.ShaderProgram;
 import tk.betelge.alw3d.renderer.passes.ClearPass;
 import tk.betelge.alw3d.renderer.passes.RenderPass;
 import tk.betelge.alw3d.renderer.passes.SceneRenderPass;
+import utils.ShaderLoader;
 import utils.StringLoader;
 
 public class Infinite extends AppCompatActivity {
@@ -34,12 +37,13 @@ public class Infinite extends AppCompatActivity {
 
         setContentView(view);
 
-        Procedural proc = new DummyProcedural();
+        ShaderProgram shaderProgram = ShaderLoader.loadShaderProgram(R.raw.terrain_v, R.raw.terrain_f);
+        Material material = new Material(shaderProgram);
 
+        Procedural proc = new Noise(42l);
         PatchGeometry geo = PatchGenerator.generate(
-                proc, 16, new Vector3f(0,0,0), 1);
-
-        Patch patch = new Patch(geo, Material.DEFAULT);
+                proc, 32, new Vector3f(0,0,0), 1);
+        Patch patch = new Patch(geo, material);
 
         Node rootNode = new Node();
         rootNode.attach(patch);
