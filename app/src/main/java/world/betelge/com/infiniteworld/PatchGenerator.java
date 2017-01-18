@@ -20,7 +20,10 @@ public class PatchGenerator {
 
     public static PatchGeometry generate(Procedural proc, int resolution, Vector3f pos, float scale) {
 
-        ShortBuffer indices = ShortBuffer.allocate(2 * resolution * (resolution - 1) + 2 * (resolution - 1));
+        int indexCount = 2 * resolution * (resolution - 1) + 2 * (resolution - 1);
+        int vertexCount = resolution * resolution;
+
+        ShortBuffer indices = ShortBuffer.allocate(indexCount);
 
         List<Geometry.Attribute> atList = new ArrayList<Geometry.Attribute>();
 
@@ -28,28 +31,28 @@ public class PatchGenerator {
         position.name = POS_ATT_NAME;
         position.size = 3;
         position.type = Geometry.Type.FLOAT;
-        position.buffer = FloatBuffer.allocate(3 * resolution * resolution);
+        position.buffer = FloatBuffer.allocate(3 * vertexCount);
         atList.add(position);
 
         Geometry.Attribute normal = new Geometry.Attribute();
         normal.name = NORMAL_ATT_NAME;
         normal.size = 3;
         normal.type = Geometry.Type.FLOAT;
-        normal.buffer = FloatBuffer.allocate(3 * resolution * resolution);
+        normal.buffer = FloatBuffer.allocate(3 * vertexCount);
         atList.add(normal);
 
         PatchGeometry geo = new PatchGeometry(Geometry.PrimitiveType.TRIANGLE_STRIP,
-                indices, atList, resolution * resolution);
+                indices, atList, indexCount, resolution);
 
         update(geo, proc, pos, scale);
 
         return geo;
     }
 
-    public static void update(UpdatableGeometry geometry, Procedural proc, Vector3f pos, float scale) {
+    public static void update(PatchGeometry geometry, Procedural proc, Vector3f pos, float scale) {
 
         synchronized (geometry) {
-            int resolution = (int) Math.sqrt(geometry.getMaxCount());
+            int resolution = geometry.getResolution();
 
             ShortBuffer indices = geometry.getIndices();
             FloatBuffer vertices = null;
@@ -69,7 +72,7 @@ public class PatchGenerator {
             Vector3f gradient = new Vector3f();
             for (int j = 0; j < resolution; j++) {
                 for (int i = 0; i < resolution; i++) {
-                    vertPos.set(-1.f + 2.f * i / (resolution - 1), -1.f + 2.f * j / (resolution - 1), 0.f);
+                    vertPos.set(-.5f + i / (float) (resolution - 1), -.5f + j / (float) (resolution - 1), 0.f);
                     realPos.set(vertPos);
                     realPos.multThis(scale);
                     realPos.addThis(pos);

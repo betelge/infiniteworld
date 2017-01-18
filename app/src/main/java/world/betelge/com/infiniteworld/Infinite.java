@@ -32,7 +32,7 @@ public class Infinite extends AppCompatActivity implements View.OnTouchListener 
     CameraNode sceneCam;
 
     Procedural proc;
-    Patch patch;
+    Patch[] patches;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,15 +48,26 @@ public class Infinite extends AppCompatActivity implements View.OnTouchListener 
         Material material = new Material(shaderProgram);
 
         proc = new Noise(42l);
-        PatchGeometry geo = PatchGenerator.generate(
-                proc, 32, new Vector3f(0,0,0), 1);
-        patch = new Patch(geo, material);
-
         Node rootNode = new Node();
-        rootNode.attach(patch);
+
+        final int PATCH_SIZE = 3;
+        patches = new Patch[PATCH_SIZE*PATCH_SIZE];
+
+        // Initialize patches
+        for(int j = 0; j < PATCH_SIZE; j++) {
+            for (int i = 0; i < PATCH_SIZE; i++) {
+                Vector3f pos = new Vector3f(-(PATCH_SIZE-1) / 2 + i, -(PATCH_SIZE-1) / 2 + j, 0);
+                PatchGeometry geo = PatchGenerator.generate(proc, 32, pos, 1);
+                Patch patch = new Patch(geo, material);
+                patches[PATCH_SIZE*j+i] = patch;
+                patch.getTransform().getPosition().set(pos);
+                rootNode.attach(patch);
+            }
+        }
+
         sceneCam = new CameraNode(60, 0, 0.1f, 1000);
         rootNode.attach(sceneCam);
-        sceneCam.getTransform().getPosition().set(3, -3, 3);
+        sceneCam.getTransform().getPosition().set(2, -2, 2);
         sceneCam.getTransform().getRotation().lookAt(new Vector3f(-1,1,-1), new Vector3f(0, 0, -1));
         SceneRenderPass pass = new SceneRenderPass(rootNode, sceneCam);
 
@@ -72,7 +83,7 @@ public class Infinite extends AppCompatActivity implements View.OnTouchListener 
     @Override
     public boolean onTouch(View view, MotionEvent motionEvent) {
         Vector3f pos = new Vector3f(100*rnd.nextFloat(), 100*rnd.nextFloat(), 0.f);
-        PatchGenerator.update((UpdatableGeometry) patch.getGeometry(), proc, pos, 1.f);
+        PatchGenerator.update((PatchGeometry) patches[4].getGeometry(), proc, pos, 1.f);
 
         return true;
     }

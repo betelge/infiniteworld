@@ -12,15 +12,23 @@ import tk.betelge.alw3d.renderer.UpdatableGeometry;
 public class PatchGeometry extends UpdatableGeometry {
 
     final int maxCount;
+    final int resolution;
 
     PatchGeometry(PrimitiveType primitiveType, ShortBuffer indices,
-                  List<Attribute> attributes, int maxVertexCount) {
+                  List<Attribute> attributes, int maxCount, int resolution) {
         super(primitiveType, indices, attributes);
-        this.maxCount = maxVertexCount;
+        this.maxCount = maxCount;
+        this.resolution = resolution;
+
+        this.setCount(maxCount);
     }
 
     @Override
     public int getMaxCount() {
         return maxCount;
+    }
+
+    public int getResolution() {
+        return resolution;
     }
 }
