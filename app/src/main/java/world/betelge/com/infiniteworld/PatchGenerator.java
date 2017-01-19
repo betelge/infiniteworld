@@ -51,6 +51,9 @@ public class PatchGenerator {
 
     public static void update(PatchGeometry geometry, Procedural proc, Vector3f pos, float scale) {
 
+        // TODO: Use an AsyncTask. Flag geometry so that it is not drawn and the sync doesn't
+        // TODO: lock the rendering thread.
+
         synchronized (geometry) {
             int resolution = geometry.getResolution();
 
@@ -69,7 +72,7 @@ public class PatchGenerator {
             normals.clear();
             Vector3f vertPos = new Vector3f();
             Vector3f realPos = new Vector3f();
-            Vector3f gradient = new Vector3f();
+            Vector3f normal = new Vector3f();
             for (int j = 0; j < resolution; j++) {
                 for (int i = 0; i < resolution; i++) {
                     vertPos.set(-.5f + i / (float) (resolution - 1), -.5f + j / (float) (resolution - 1), 0.f);
@@ -78,15 +81,15 @@ public class PatchGenerator {
                     realPos.addThis(pos);
 
                     double h = proc.getValueNormal(realPos.x, realPos.y, realPos.z,
-                            scale / resolution, gradient);
+                            scale / resolution, normal);
 
                     vertices.put(vertPos.x);
                     vertices.put(vertPos.y);
                     vertices.put((float) h);
 
-                    normals.put(gradient.x);
-                    normals.put(gradient.y);
-                    normals.put(gradient.z);
+                    normals.put(normal.x);
+                    normals.put(normal.y);
+                    normals.put(normal.z);
                 }
             }
             vertices.flip();
