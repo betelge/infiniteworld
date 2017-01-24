@@ -114,8 +114,10 @@ public class Infinite extends AppCompatActivity implements View.OnTouchListener 
                 .getPosition();
         int dx = gridX - Math.round(currentPos.x);
         int dy = gridY - Math.round(currentPos.y);
+        float errorX = Math.abs(rayHit.x - (gridX - .5f * dx));
+        float errorY = Math.abs(rayHit.y - (gridY - .5f * dy));
 
-        if(dx == 0 && dy == 0)
+        if(dx == 0 && dy == 0 || (errorX < .1 && errorY < .1))
             return; // We haven't moved enough
 
         Patch[] newPatches = new Patch[PATCH_SIZE*PATCH_SIZE];
