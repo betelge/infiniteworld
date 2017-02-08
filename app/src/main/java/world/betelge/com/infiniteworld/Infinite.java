@@ -58,10 +58,11 @@ public class Infinite extends AppCompatActivity implements View.OnTouchListener 
         for(int j = 0; j < PATCH_SIZE; j++) {
             for (int i = 0; i < PATCH_SIZE; i++) {
                 Vector3f pos = new Vector3f(-(PATCH_SIZE-1) / 2 + i, -(PATCH_SIZE-1) / 2 + j, 0);
-                PatchGeometry geo = PatchGenerator.generate(proc, 32, pos, 1);
+                PatchGeometry geo = PatchGenerator.generate(proc, 32);
                 Patch patch = new Patch(geo, material);
                 patches[PATCH_SIZE*j+i] = patch;
                 patch.getTransform().getPosition().set(pos);
+                PatchGenerator.update(patch, proc, pos, 1);
                 rootNode.attach(patch);
             }
         }

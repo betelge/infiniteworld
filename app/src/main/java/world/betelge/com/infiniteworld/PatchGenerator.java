@@ -18,7 +18,7 @@ public class PatchGenerator {
     final static String POS_ATT_NAME = "position";
     final static String NORMAL_ATT_NAME = "normal";
 
-    public static PatchGeometry generate(Procedural proc, int resolution, Vector3f pos, float scale) {
+    public static PatchGeometry generate(Procedural proc, int resolution) {
 
         int indexCount = 2 * resolution * (resolution - 1) + 2 * (resolution - 1);
         int vertexCount = resolution * resolution;
@@ -44,8 +44,6 @@ public class PatchGenerator {
         PatchGeometry geo = new PatchGeometry(Geometry.PrimitiveType.TRIANGLE_STRIP,
                 indices, atList, indexCount, resolution);
 
-        update(geo, proc, pos, scale, false);
-
         return geo;
     }
 
@@ -59,7 +57,7 @@ public class PatchGenerator {
         patch.setTerrainAsyncTask(newTask);
     }
 
-    public static void update(PatchGeometry geometry, Procedural proc, Vector3f pos, float scale) {
+    /*public static void update(PatchGeometry geometry, Procedural proc, Vector3f pos, float scale) {
         update(geometry, proc, pos, scale, true);
     }
 
@@ -72,5 +70,5 @@ public class PatchGenerator {
             task.execute();
         else
             task.doInBackground(null); // Execute on this thread
-    }
+    }*/
 }

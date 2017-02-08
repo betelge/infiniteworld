@@ -18,6 +18,7 @@ public class Patch extends GeometryNode {
 
     Patch(Geometry geometry, Material material) {
         super(geometry, material);
+        setVisible(false); // Set to true when updated with generated terrain
     }
 
     public TerrainAsyncTask getTerrainAsyncTask() {

@@ -28,7 +28,7 @@ public class TerrainAsyncTask extends AsyncTask {
         }
     }
 
-    TerrainAsyncTask(PatchGeometry geometry, Procedural proc, Vector3f pos, float scale) {
+    private TerrainAsyncTask(PatchGeometry geometry, Procedural proc, Vector3f pos, float scale) {
         this.geometry = geometry;
         this.proc = proc;
         this.pos = pos;
