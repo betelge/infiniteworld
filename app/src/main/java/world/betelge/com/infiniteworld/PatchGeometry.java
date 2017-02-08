@@ -20,7 +20,7 @@ public class PatchGeometry extends UpdatableGeometry {
         this.maxCount = maxCount;
         this.resolution = resolution;
 
-        this.setCount(maxCount);
+        this.setCount(0);
     }
 
     @Override

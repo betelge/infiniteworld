@@ -190,7 +190,7 @@ public class Infinite extends AppCompatActivity implements View.OnTouchListener 
                     patchPos.set(gridX + newI - centerOffset,
                             gridY + newJ - centerOffset, 0);
 
-                    PatchGenerator.update((PatchGeometry) patch.getGeometry(), proc, patchPos, 1f);
+                    PatchGenerator.update(patch, proc, patchPos, 1f);
                 }
             }
         }

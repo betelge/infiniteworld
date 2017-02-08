@@ -44,72 +44,33 @@ public class PatchGenerator {
         PatchGeometry geo = new PatchGeometry(Geometry.PrimitiveType.TRIANGLE_STRIP,
                 indices, atList, indexCount, resolution);
 
-        update(geo, proc, pos, scale);
+        update(geo, proc, pos, scale, false);
 
         return geo;
     }
 
+    public static void update(Patch patch, Procedural proc, Vector3f pos, float scale) {
+        TerrainAsyncTask oldTask = patch.getTerrainAsyncTask();
+        if(oldTask != null)
+            oldTask.cancel(true); // Cancel thread even if running
+
+        TerrainAsyncTask newTask = new TerrainAsyncTask(patch, proc, pos, scale);
+        newTask.execute();
+        patch.setTerrainAsyncTask(newTask);
+    }
+
     public static void update(PatchGeometry geometry, Procedural proc, Vector3f pos, float scale) {
+        update(geometry, proc, pos, scale, true);
+    }
 
-        // TODO: Use an AsyncTask. Flag geometry so that it is not drawn and the sync doesn't
-        // TODO: lock the rendering thread.
+    public static void update(PatchGeometry geometry, Procedural proc, Vector3f pos, float scale,
+                              boolean isAsync) {
 
-        synchronized (geometry) {
-            int resolution = geometry.getResolution();
+        TerrainAsyncTask task = new TerrainAsyncTask(geometry, proc, pos, scale);
 
-            ShortBuffer indices = geometry.getIndices();
-            FloatBuffer vertices = null;
-            FloatBuffer normals = null;
-            for (Geometry.Attribute att : geometry.getAttributes()) {
-                if (att.name.equals(POS_ATT_NAME)) {
-                    vertices = (FloatBuffer) att.buffer;
-                } else if (att.name.equals(NORMAL_ATT_NAME)) {
-                    normals = (FloatBuffer) att.buffer;
-                }
-            }
-
-            vertices.clear();
-            normals.clear();
-            Vector3f vertPos = new Vector3f();
-            Vector3f realPos = new Vector3f();
-            Vector3f normal = new Vector3f();
-            for (int j = 0; j < resolution; j++) {
-                for (int i = 0; i < resolution; i++) {
-                    vertPos.set(-.5f + i / (float) (resolution - 1), -.5f + j / (float) (resolution - 1), 0.f);
-                    realPos.set(vertPos);
-                    realPos.multThis(scale);
-                    realPos.addThis(pos);
-
-                    double h = proc.getValueNormal(realPos.x, realPos.y, realPos.z,
-                            scale / resolution, normal);
-
-                    vertices.put(vertPos.x);
-                    vertices.put(vertPos.y);
-                    vertices.put((float) h);
-
-                    normals.put(normal.x);
-                    normals.put(normal.y);
-                    normals.put(normal.z);
-                }
-            }
-            vertices.flip();
-            normals.flip();
-
-            indices.clear();
-            for (short j = 0; j < resolution - 1; j++) {
-                for (short i = 0; i < resolution; i++) {
-                    indices.put((short) (j * resolution + i));
-                    indices.put((short) ((j + 1) * resolution + i));
-                }
-                // Degenerated triangle
-                indices.put((short) ((j + 2) * resolution - 1));
-                indices.put((short) ((j + 1) * resolution));
-            }
-            indices.flip();
-
-            geometry.setCount(indices.capacity());
-            geometry.needsUpdate = true;
-
-        }
+        if(isAsync)
+            task.execute();
+        else
+            task.doInBackground(null); // Execute on this thread
     }
 }

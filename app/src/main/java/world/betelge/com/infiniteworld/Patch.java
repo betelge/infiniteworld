@@ -14,8 +14,18 @@ public class Patch extends GeometryNode {
     int gridx, gridy, gridz;
     int level;
 
+    TerrainAsyncTask task = null;
+
     Patch(Geometry geometry, Material material) {
         super(geometry, material);
+    }
+
+    public TerrainAsyncTask getTerrainAsyncTask() {
+        return task;
+    }
+
+    public void setTerrainAsyncTask(TerrainAsyncTask task) {
+        this.task = task;
     }
 
     public int getGridx() {
