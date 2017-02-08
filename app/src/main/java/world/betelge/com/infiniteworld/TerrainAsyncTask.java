@@ -64,8 +64,8 @@ public class TerrainAsyncTask extends AsyncTask {
             for (int i = 0; i < resolution; i++) {
                 vertPos.set(-.5f + i / (float) (resolution - 1), -.5f + j / (float) (resolution - 1), 0.f);
                 realPos.set(vertPos);
-                realPos.multThis(scale);
                 realPos.addThis(pos);
+                realPos.multThis(scale);
 
                 double h = proc.getValueNormal(realPos.x, realPos.y, realPos.z,
                         scale / resolution, normal);
@@ -78,6 +78,8 @@ public class TerrainAsyncTask extends AsyncTask {
                 normals.put(normal.y);
                 normals.put(normal.z);
             }
+
+            Thread.yield(); // TODO: Does this help?
         }
         vertices.flip();
         normals.flip();

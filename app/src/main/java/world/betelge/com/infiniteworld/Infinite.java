@@ -35,6 +35,7 @@ public class Infinite extends AppCompatActivity implements View.OnTouchListener 
     Procedural proc;
     Patch[] patches;
     final int PATCH_SIZE = 3;
+    float scale = 1f;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,7 +63,7 @@ public class Infinite extends AppCompatActivity implements View.OnTouchListener 
                 Patch patch = new Patch(geo, material);
                 patches[PATCH_SIZE*j+i] = patch;
                 patch.getTransform().getPosition().set(pos);
-                PatchGenerator.update(patch, proc, pos, 1);
+                PatchGenerator.update(patch, proc, pos, scale);
                 rootNode.attach(patch);
             }
         }
@@ -191,7 +192,7 @@ public class Infinite extends AppCompatActivity implements View.OnTouchListener 
                     patchPos.set(gridX + newI - centerOffset,
                             gridY + newJ - centerOffset, 0);
 
-                    PatchGenerator.update(patch, proc, patchPos, 1f);
+                    PatchGenerator.update(patch, proc, patchPos, scale);
                 }
             }
         }
