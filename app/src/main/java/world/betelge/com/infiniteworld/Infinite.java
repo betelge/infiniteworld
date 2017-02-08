@@ -7,10 +7,10 @@ import android.view.MotionEvent;
 import android.view.View;
 
 import java.util.List;
-import java.util.Random;
 
 import tk.betelge.alw3d.Alw3dModel;
 import tk.betelge.alw3d.Alw3dView;
+import tk.betelge.alw3d.math.Matrix4;
 import tk.betelge.alw3d.math.Noise;
 import tk.betelge.alw3d.math.Transform;
 import tk.betelge.alw3d.math.Vector3f;
@@ -20,7 +20,6 @@ import tk.betelge.alw3d.renderer.CameraNode;
 import tk.betelge.alw3d.renderer.Material;
 import tk.betelge.alw3d.renderer.Node;
 import tk.betelge.alw3d.renderer.ShaderProgram;
-import tk.betelge.alw3d.renderer.UpdatableGeometry;
 import tk.betelge.alw3d.renderer.passes.ClearPass;
 import tk.betelge.alw3d.renderer.passes.RenderPass;
 import tk.betelge.alw3d.renderer.passes.SceneRenderPass;
@@ -30,7 +29,7 @@ import utils.StringLoader;
 public class Infinite extends AppCompatActivity implements View.OnTouchListener {
 
     Alw3dModel model;
-    Alw3dView view;
+    Alw3dView alw3dView;
     CameraNode sceneCam;
 
     Procedural proc;
@@ -42,15 +41,15 @@ public class Infinite extends AppCompatActivity implements View.OnTouchListener 
         super.onCreate(savedInstanceState);
 
         model = new Alw3dModel();
-        view = new Alw3dView(this, model);
+        alw3dView = new Alw3dView(this, model);
         StringLoader.setContext(this);
 
-        setContentView(view);
+        setContentView(alw3dView);
 
         ShaderProgram shaderProgram = ShaderLoader.loadShaderProgram(R.raw.terrain_v, R.raw.terrain_f);
         Material material = new Material(shaderProgram);
 
-        proc = new /*fBm*/Noise(42l);
+        proc = new fBm(42l);
         Node rootNode = new Node();
 
         patches = new Patch[PATCH_SIZE*PATCH_SIZE];
@@ -78,21 +77,71 @@ public class Infinite extends AppCompatActivity implements View.OnTouchListener 
         renderPasses.add(new ClearPass(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT));
         renderPasses.add(pass);
 
-        view.setOnTouchListener(this);
+        alw3dView.setOnTouchListener(this);
     }
 
-    Random rnd = new Random();
+    Vector3f panStart = new Vector3f();
+    Vector3f panOldStart = new Vector3f();
+    Vector3f panEnd = new Vector3f();
+    Transform camAbsTransform = new Transform();
     @Override
     public boolean onTouch(View view, MotionEvent motionEvent) {
-        //Vector3f pos = new Vector3f(100*rnd.nextFloat(), 100*rnd.nextFloat(), 0.f);
-        //PatchGenerator.update((PatchGeometry) patches[4].getGeometry(), proc, pos, 1.f);
 
-        if(motionEvent.getHistorySize() > 0) {
-            float dx = motionEvent.getX() - motionEvent.getHistoricalX(0);
-            float dy = motionEvent.getY() - motionEvent.getHistoricalY(0);
-            sceneCam.getTransform().getPosition().addThis(dx/1000f, dy/1000f, 0);
+        switch(motionEvent.getPointerCount()) {
+            case 1:
+                if (motionEvent.getHistorySize() == 0) {
+                    // TODO: Can this be missed?
+                    panOldStart.set(-1f + 2f * motionEvent.getX() / model.getWidth(),
+                            1f - 2f * motionEvent.getY() / model.getHeight(), 0);
+                }
+                if (motionEvent.getHistorySize() > 0) {
 
-            arrangePatches();
+                    panStart.set(panOldStart);
+                    panEnd.set(-1f + 2f * motionEvent.getX() / model.getWidth(),
+                            1f - 2f * motionEvent.getY() / model.getHeight(), 0);
+                    panOldStart.set(panEnd);
+
+                    // Get and invert camera projection matrix
+                    float[] projMat = alw3dView.getRenderer().getPerspectiveMatrix();
+                    float invProjMat[] = new float[16];
+                    for(float f : invProjMat) f = 0;
+                    float a = projMat[0];
+                    float b = projMat[5];
+                    float c = projMat[10];
+                    float d = projMat[14];
+                    float e = projMat[11];
+                    invProjMat[0] = 1f / a;
+                    invProjMat[5] = 1f / b;
+                    invProjMat[11] = 1f / d;
+                    invProjMat[14] = 1f / e;
+                    invProjMat[15] = -c / (d * e);
+                    Matrix4 mat = new Matrix4(invProjMat);
+
+                    mat.mult(panStart, panStart);
+                    mat.mult(panEnd, panEnd);
+
+                    camAbsTransform = sceneCam.getAbsoluteTransform();
+                    camAbsTransform.getRotation().mult(panStart, panStart);
+                    camAbsTransform.getRotation().mult(panEnd, panEnd);
+                    panStart.normalizeThis();
+                    panEnd.normalizeThis();
+
+                    // TODO: Other projections
+                    // Project onto z = 0 plane
+                    panStart.multThis(-camAbsTransform.getPosition().z / panStart.z);
+                    panEnd.multThis(-camAbsTransform.getPosition().z / panEnd.z);
+                    panStart.addThis(camAbsTransform.getPosition());
+                    panEnd.addThis(camAbsTransform.getPosition());
+
+                    sceneCam.getTransform().getPosition().subThis(panEnd.sub(panStart));
+
+                    arrangePatches();
+                }
+                break;
+            case 2:
+                break;
+            default:
+
         }
 
         return true;
@@ -117,7 +166,8 @@ public class Infinite extends AppCompatActivity implements View.OnTouchListener 
         float errorX = Math.abs(rayHit.x - (gridX - .5f * dx));
         float errorY = Math.abs(rayHit.y - (gridY - .5f * dy));
 
-        if(dx == 0 && dy == 0 || (errorX < .1 && errorY < .1))
+        final float MARGIN = .4f;
+        if(dx == 0 && dy == 0 || (errorX < MARGIN && errorY < MARGIN))
             return; // We haven't moved enough
 
         Patch[] newPatches = new Patch[PATCH_SIZE*PATCH_SIZE];
